@@ -1,0 +1,32 @@
+<launch>
+  
+  <arg name="marker_ids" default="10, 17" />
+  <arg name="__ns" default=""/>
+  <arg name="eval_underscore_bypass" value="$(arg __ns)"/>
+  <arg if="$(eval eval_underscore_bypass == '')" name="prefix" default=''/>
+  <arg unless="$(eval eval_underscore_bypass == '')" name="prefix" default="$(arg __ns)/"/>
+
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video0" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="yuyv" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="io_method" value="mmap"/>
+  </node>
+
+  <include file = "$(find ar_track_alvar)/launch/pr2_indiv_no_kinect.launch">
+    <arg name="cam_image_topic" value="/usb_cam/image_raw" />
+    <arg name="cam_info_topic" value="/usb_cam/camera_info" />
+    <arg name="output_frame" value="usb_cam" />
+  </include>
+
+  <include file = "$(find ar_tags_xarm7)/launch/static_transform_publisher.launch"/>
+
+  <node name="transform_pose_marker" pkg="ar_tags_xarm7" type="transform_pose_marker.py" output="screen"/>
+
+  <node name="ar_tags_xarm7" pkg="ar_tags_xarm7" type="ar_tags_xarm7.py" output="screen">
+    <param name="marker_ids" type="string" value="$(arg marker_ids)" />
+  </node>
+
+</launch>
