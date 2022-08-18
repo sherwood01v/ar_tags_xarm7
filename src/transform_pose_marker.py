@@ -19,8 +19,8 @@ def callback(data):
             tf_marker = marker
             marker.pose.header = marker.header
             pub.publish(marker.pose)
-            t = listener.getLatestCommonTime("/link_base", "/usb_cam")
-            (trans,rot) = listener.lookupTransform('/link_base', '/usb_cam', t)
+            t = listener.getLatestCommonTime("/link_base", "/camera_link")
+            (trans,rot) = listener.lookupTransform('/link_base', '/camera_link', t)
             p_in_base = listener.transformPose("link_base", marker.pose)
             pub1.publish(p_in_base)
             tf_marker.pose = p_in_base
