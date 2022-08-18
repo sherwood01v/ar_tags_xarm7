@@ -189,12 +189,12 @@ def main():
         marker_id_stor_1 = int(input())
         print ("============ Enter id of object needs to be placed to the storage area 1")
         marker_ids_obj_1 = input().split()
-        marker_id_obj_1 = list(map(int, marker_id_obj_1))
+        marker_id_obj_1 = list(map(int, marker_ids_obj_1))
         print ("============ Enter id of storage area 2")
         marker_id_stor_2 = int(input())
         print ("============ Enter id of object needs to be placed to the storage area 2")
         marker_ids_obj_2 = input().split()
-        marker_id_obj_2 = list(map(int, marker_id_obj_2))
+        marker_id_obj_2 = list(map(int, marker_ids_obj_2))
 
 
         print ("============ Press `Enter` to begin by setting up the moveit_commander")
