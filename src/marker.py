@@ -7,7 +7,7 @@ from ar_track_alvar_msgs.msg import AlvarMarkers
 from moveit_commander.conversions import pose_to_list
 
 black_list_markers = []
-param = 0
+#param = 0
 k = 0
 
 def callback(data):
@@ -188,13 +188,11 @@ def main():
         print ("============ Enter id of storage area 1")
         marker_id_stor_1 = int(input())
         print ("============ Enter id of object needs to be placed to the storage area 1")
-        marker_ids_obj_1 = input().split()
-        marker_id_obj_1 = list(map(int, marker_ids_obj_1))
+        marker_id_obj_1 = int(input())
         print ("============ Enter id of storage area 2")
         marker_id_stor_2 = int(input())
         print ("============ Enter id of object needs to be placed to the storage area 2")
-        marker_ids_obj_2 = input().split()
-        marker_id_obj_2 = list(map(int, marker_ids_obj_2))
+        marker_id_obj_2 = int(input())
 
 
         print ("============ Press `Enter` to begin by setting up the moveit_commander")
@@ -204,7 +202,7 @@ def main():
         rospy.loginfo("Subscribing to ar_pose_marker")
 
         while True:
-
+            
             rospy.Subscriber("/ar_tf_markers", AlvarMarkers, callback)
             print ("============ Press `Enter` to start Xarm7 movement")
             inp = input()
