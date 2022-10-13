@@ -11,15 +11,12 @@ from geometry_msgs.msg import PoseStamped
 def callback(data):
     if len(data.markers)!=0:
         tf_markers = ar_track_alvar_msgs.msg.AlvarMarkers()
-        #tf_markers = data
-        #tf_markers.markers = []
-        #rospy.loginfo(data)
         for marker in data.markers:
-            #rospy.loginfo("I exist")
             tf_marker = marker
             marker.pose.header = marker.header
             pub.publish(marker.pose)
             t = listener.getLatestCommonTime("/link_base", "/camera_link")
+            #t = rospy.Time(0)
             (trans,rot) = listener.lookupTransform('/link_base', '/camera_link', t)
             p_in_base = listener.transformPose("link_base", marker.pose)
             pub1.publish(p_in_base)
