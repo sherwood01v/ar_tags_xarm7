@@ -2,7 +2,6 @@ import rospy
 import sys
 import moveit_commander
 import geometry_msgs.msg
-import tf
 from ar_track_alvar_msgs.msg import AlvarMarkers
 from moveit_commander.conversions import pose_to_list
 
@@ -51,11 +50,8 @@ class ARtagNavigation(object):
         rospy.init_node('marker_node', anonymous=True)
 
         robot = moveit_commander.RobotCommander()
-
         scene = moveit_commander.PlanningSceneInterface()
-
         xarm7 = moveit_commander.MoveGroupCommander("xarm7")
-
         gripper = moveit_commander.MoveGroupCommander("xarm_gripper")
 
         self.box_name = ''
@@ -68,32 +64,17 @@ class ARtagNavigation(object):
 
         p = geometry_msgs.msg.PoseStamped()
         p.header.frame_id = robot.get_planning_frame()
-        p.pose.position.x = -0.22
-        p.pose.position.y = -0.13
-        p.pose.position.z = -0.05
-        p.pose.orientation.x = 0.
-        p.pose.orientation.y = 0.
-        p.pose.orientation.z = 0.2570806
-        p.pose.orientation.w = 0.96639
+        p.pose.position.x = 0.01
+        p.pose.position.y = 0.00
+        p.pose.position.z = -0.07
 
-        scene.add_box("table_1", p, (1, 1, 0.1))
+        scene.add_box("table", p, (1, 1, 0.1))
 
-        p.pose.position.x = 0.46
-        p.pose.position.y = 0.26
-        p.pose.position.z = -0.14
-        p.pose.orientation.x = 0.
-        p.pose.orientation.z = 0.2570806
-        p.pose.orientation.w = 0.96639
-
-        scene.add_box("table_2", p, (1, 1, 0.1))
-
-        p.pose.position.x = -0.37
-        p.pose.position.y = -0.20
-        p.pose.position.z = 0.4
-        p.pose.orientation.x = -0.1848861
-        p.pose.orientation.y = 0.6863426
-        p.pose.orientation.z = 0.1848861
-        p.pose.orientation.w = 0.6786516
+        p.pose.position.x = -0.44
+        p.pose.position.y = 0.00
+        p.pose.position.z = 0.48
+        p.pose.orientation.y = 0.7068252
+        p.pose.orientation.w = 0.7073883
 
         scene.add_box("wall", p, (1, 1, 0.1))
 
@@ -104,28 +85,8 @@ class ARtagNavigation(object):
         current_pose = xarm7.get_current_pose().pose
         pose_goal = current_pose
 
-        marker_orientation = (
-        marker_pose.orientation.x,
-        marker_pose.orientation.y,
-        marker_pose.orientation.z,
-        marker_pose.orientation.w)
-
-        euler = tf.transformations.euler_from_quaternion(marker_orientation)
-
-        roll = 3.14 + euler[0]
-        pitch = euler[1]
-        yaw = euler[2]
-
-        quaternion = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
-
-        pose_goal.orientation.x = quaternion[0]
-        pose_goal.orientation.y = quaternion[1]
-        pose_goal.orientation.z = quaternion[2]
-        pose_goal.orientation.w = quaternion[3]
-
         pose_goal.position.x = marker_pose.position.x
-        pose_goal.position.y = marker_pose.position.y
-        pose_goal.position.z = marker_pose.position.z+0.05
+        pose_goal.position.y = marker_pose.position.y - 0.09687462526
 
         xarm7.set_pose_target(pose_goal)
 
@@ -138,37 +99,12 @@ class ARtagNavigation(object):
     def Xarm7ToStorage(self):
         xarm7 = self.xarm7
 
-        # joint_goal = xarm7.get_current_joint_values()
-        # joint_goal[1] = 0.1
-
-        # xarm7.go(joint_goal, wait=True)
-
         pose_goal = geometry_msgs.msg.Pose()
         current_pose = xarm7.get_current_pose().pose
         pose_goal = current_pose
 
-        # storage_orientation = (
-        # storage_pose.orientation.x,
-        # storage_pose.orientation.y,
-        # storage_pose.orientation.z,
-        # storage_pose.orientation.w)
-
-        # euler = tf.transformations.euler_from_quaternion(storage_orientation)
-
-        # roll = 3.14 + euler[0]
-        # pitch = euler[1]
-        # yaw = euler[2]
-
-        # quaternion = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
-
-        # pose_goal.orientation.x = quaternion[0]
-        # pose_goal.orientation.y = quaternion[1]
-        # pose_goal.orientation.z = quaternion[2]
-        # pose_goal.orientation.w = quaternion[3]
-
-        pose_goal.position.x = storage_pose.position.x
-        pose_goal.position.y = storage_pose.position.y
-        pose_goal.position.z = storage_pose.position.z + 0.05
+        pose_goal.position.x = storage_pose.position.x + 0.15
+        pose_goal.position.y = storage_pose.position.y + 0.05
 
         xarm7.set_pose_target(pose_goal)
 
@@ -184,8 +120,25 @@ class ARtagNavigation(object):
         if state == "open":
             gripper_values[0] = 0
         elif state == "close":
-            gripper_values[0] = 0.5
+            gripper_values[0] = 0.3
         gripper.go(gripper_values, wait=True)
+    
+    def lineMotion(self, direction):
+        xarm7 = self.xarm7
+        current_pose = xarm7.get_current_pose().pose
+
+        waypoints = []
+        if direction == "down": 
+            current_pose.position.z = 0.03
+        elif direction == "up": 
+            current_pose.position.z = 0.3
+
+        waypoints.append(current_pose)
+        (traj, fraction) = xarm7.compute_cartesian_path(waypoints, 0.01, 0.0)
+
+        xarm7.clear_pose_targets()
+
+        self.ExecutePlan(traj)
 
     def ExecutePlan(self, plan):    
         xarm7 = self.xarm7
@@ -208,72 +161,35 @@ class ARtagNavigation(object):
 def main():
     global marker_pose, marker_id_stor_1, marker_id_obj_1, marker_id_stor_2, marker_id_obj_2
     try:
-        # print ("============ Enter id of storage area 1, storage area 2, object 1, object 2")
-        # marker_id = input().split()
-        # marker_ids = []
-        # for id in marker_id:
-        #     marker_ids.append(int(id))
-        
-        # print ("============ Enter id of storage area 1")
-        # marker_id_stor_1 = int(input())
-        # print ("============ Enter id of object needs to be placed to the storage area 1")
-        # marker_id_obj_1 = int(input())
-        # print ("============ Enter id of storage area 2")
-        # marker_id_stor_2 = int(input())
-        # print ("============ Enter id of object needs to be placed to the storage area 2")
-        # marker_id_obj_2 = int(input())
-        # marker_id_stor_1 = 7
-        # marker_id_obj_1 = 8
-        # marker_id_stor_2 = 18
-        # marker_id_obj_2 = 6
         marker_id_stor_1 = 6
-        marker_id_obj_1 = 0
+        marker_id_obj_1 = 2
         marker_id_stor_2 = 12
-        marker_id_obj_2 = 9
+        marker_id_obj_2 = 0
 
         param = 1
         move = ARtagNavigation()
         rospy.loginfo("Subscribing to ar_pose_marker")
         rospy.Subscriber("/ar_tf_markers", AlvarMarkers, callback)
 
-        move.Xarm7ToStart()
-
         while True:
-            
-            #rospy.Subscriber("/ar_tf_markers", AlvarMarkers, callback)
-
             try:
                 print ("============ Press `Enter` to start Xarm7 movement")
                 inp = input()
                 if inp == "stop": break
                 else: inp = "plan"
-
-                while inp == "plan":
-                    plan, bool_debug = move.Xarm7ToObject() 
-
-                    print ("============ Press `ENTER` to execute a saved path, plan to replan")
-                    inp = input()
-                    
-                if inp == "stop": break
-                elif inp == "restart": main()
-                
-                move.ExecutePlan(plan)
-                move.Gripper("close")
-                inp = "plan"
-
-                while inp == "plan":
-                    plan, bool_debug = move.Xarm7ToStorage()
-
-                    print ("============ Press `ENTER` to execute a saved path, plan to replan")
-                    inp = input()
-                
-                if inp == "stop": break
-                elif inp == "restart": main()
-
-                move.ExecutePlan(plan)
-                move.Gripper("open")
-                marker_pose = 0
                 move.Xarm7ToStart()
+                plan, bool_debug = move.Xarm7ToObject()  
+                move.ExecutePlan(plan)
+                move.lineMotion("down")
+                move.Gripper("close")
+                move.lineMotion("up")
+                plan, bool_debug = move.Xarm7ToStorage()
+                move.ExecutePlan(plan)
+                move.lineMotion("down")
+                move.Gripper("open")
+                move.lineMotion("up")
+                move.Xarm7ToStart()
+                marker_pose = 0
             except:
                 print("No marker detected")
 
